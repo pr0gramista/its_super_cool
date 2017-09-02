@@ -1,6 +1,4 @@
 import json
-import random
-import string
 
 from common.vector import Vector
 from hero import Hero
@@ -50,6 +48,12 @@ class ConnectionHandler():
             'hold': hold
         })
 
+    def beat(self, hero):
+        self.send({
+            'operation': 'beat',
+            'id': hero.id
+        })
+
     def handle(self):
         while True:
             try:
@@ -68,6 +72,10 @@ class ConnectionHandler():
     def handle_joined(self, data):
         print('Joined!')
         self.id = data['id']
+
+        am_i_clone = self.game.get_hero(data['id'])
+        if am_i_clone is not None:
+            self.game.heroes.remove(am_i_clone)
 
         name = self.name
         input_handler = self.input_handler
@@ -155,3 +163,11 @@ class ConnectionHandler():
         hero = self.game.get_hero(data['id'])
         hero.throws = True
         hero.hold = data['hold']
+
+    def handle_stun(self, data):
+        hero = self.game.get_hero(data['id'])
+        hero.stun(data['duration'])
+
+    def handle_player_stunned(self, data):
+        hero = self.game.get_hero(data['id'])
+        hero.stun(data['duration'])

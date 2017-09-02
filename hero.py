@@ -1,6 +1,7 @@
 import pygame
 import math
 import utils
+import time
 
 from common.vector import Vector
 
@@ -44,6 +45,7 @@ class Hero(pygame.sprite.Sprite):
 
         self.throws = False
         self.holds_ball = False
+        self.stunned = False
 
         self.connection_handler = None
         self.input_handler = None
@@ -69,27 +71,45 @@ class Hero(pygame.sprite.Sprite):
         if self.game.ball.grabbed and self.game.ball.grabbed_by == self:
             self.connection_handler.throw(self, power)
 
+    def beat(self):
+        if self.game.ball.grabbed_by.position.dist(self.position) < 0.4:
+            self.connection_handler.beat(self)
+
     def throwing(self):
         self.connection_handler.throwing(self, self.hold)
 
     def update(self, delta):
-        if not self.holds_ball:
-            self.velocity.x = self.movement.x * self.speed
-            self.velocity.y = self.movement.y * self.speed
+        if self.stunned == False:
+            if not self.holds_ball:
+                self.velocity.x = self.movement.x * self.speed
+                self.velocity.y = self.movement.y * self.speed
+            else:
+                self.velocity.x = self.movement.x * self.speed_holding
+                self.velocity.y = self.movement.y * self.speed_holding
+
+            self.position.x += delta * self.velocity.x
+            self.position.y += delta * self.velocity.y
+
+            self.position.x, self.position.y, self.position.z = utils.cut_to_map(*self.position.xyz())
+
+            angle = round(math.degrees(math.atan2(self.velocity.y, self.velocity.x)))
+            if angle in self.images:
+                self.image = self.images[angle]
         else:
-            self.velocity.x = self.movement.x * self.speed_holding
-            self.velocity.y = self.movement.y * self.speed_holding
+            self.stunned = not time.time() > self.stun_time
 
-        self.position.x += delta * self.velocity.x
-        self.position.y += delta * self.velocity.y
-
-        self.position.x, self.position.y, self.position.z = utils.cut_to_map(*self.position.xyz())
-
-        angle = round(math.degrees(math.atan2(self.velocity.y, self.velocity.x)))
-        if angle in self.images:
-            self.image = self.images[angle]
+            if self.change_image_to_stunned:
+                self.image = pygame.transform.rotate(self.image, 90)
+                self.change_image_to_stunned = False
 
         self.rect.x, self.rect.y = utils.get_position(*self.position.xyz())
+
+    def stun(self, duration):
+        self.stunned = True
+        self.change_image_to_stunned = True
+        self.stun_time = time.time() + duration
+        # We can't perform image rotation here, because of:
+        # 'pygame.error: Surfaces must not be locked during blit'
 
     def move(self, angle, stop=False):
         modifier = 1

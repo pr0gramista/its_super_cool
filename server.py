@@ -226,6 +226,32 @@ class PlayerHandler():
                 'hold': data['hold']
             })
 
+    def handle_beat(self, data):
+        if self.server.ball.grabbed:
+            attacker = self.server.get_player_by_id(data['id'])
+            if self.server.ball.grabbed_by.position.dist(attacker.position) < 0.4:
+                success = random.choice([True, True, True, False])
+                if success:
+                    self.server.ball.velocity.x = self.server.ball.grabbed_by.velocity.x
+                    self.server.ball.velocity.y = self.server.ball.grabbed_by.velocity.y
+                    self.server.ball.velocity.z = 0.2
+
+                    self.server.tell_everyone({
+                        'operation': 'ball_thrown',
+                        'id': self.server.ball.grabbed_by.id,
+                        'vel_x': self.server.ball.velocity.x,
+                        'vel_y': self.server.ball.velocity.y,
+                        'vel_z': self.server.ball.velocity.z
+                    })
+
+                    self.server.stun_player(self.server.ball.grabbed_by, 1.5)
+
+                    self.server.ball.grabbed = False
+                    self.server.ball.grabbed_by = None
+                else:
+                    self.server.stun_player(attacker, 2.5)
+
+
 class Server():
     def __init__(self):
         self.players = []
@@ -259,6 +285,19 @@ class Server():
             if player.id == id:
                 return player
         return None
+
+    def stun_player(self, player, duration):
+        player.send({
+            'operation': 'stun',
+            'id': player.id,
+            'duration': duration
+        })
+
+        self.tell_others(player, {
+            'operation': 'player_stunned',
+            'id': player.id,
+            'duration': duration
+        })
 
     def game_logic(self):
         clock = pygame.time.Clock()

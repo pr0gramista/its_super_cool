@@ -78,6 +78,7 @@ class Game():
                     pygame.draw.rect(self.screen, (255, 255, 255),
                                      (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50 * power, 20))
 
+
             for input_handler in self.input_handlers:
                 hero = input_handler.hero
                 self.network.send({
