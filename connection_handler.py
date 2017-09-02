@@ -43,6 +43,13 @@ class ConnectionHandler():
             'power': power
         })
 
+    def throwing(self, hero, hold):
+        self.send({
+            'operation': 'throwing',
+            'id': hero.id,
+            'hold': hold
+        })
+
     def handle(self):
         while True:
             try:
@@ -131,7 +138,20 @@ class ConnectionHandler():
 
         for hero in self.game.heroes:
             hero.holds_ball = False
+            hero.throws = False
+            hero.hold = 0
 
         ball.velocity.x = data['vel_x']
         ball.velocity.y = data['vel_y']
         ball.velocity.z = data['vel_z']
+
+    def handle_goal(self, data):
+        if data['team'] == 0:
+            self.game.points_astronauts = data['points']
+        elif data['team'] == 1:
+            self.game.points_aliens = data['points']
+
+    def handle_player_throwing(self, data):
+        hero = self.game.get_hero(data['id'])
+        hero.throws = True
+        hero.hold = data['hold']

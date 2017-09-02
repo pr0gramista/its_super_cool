@@ -51,6 +51,7 @@ class KeyboardInputHandler(InputHandler):
                 if self.game.ball.grabbed and self.game.ball.grabbed_by == self.hero:
                     self.hero.hold = time.time()
                     self.hero.throws = True
+                    self.hero.throwing()
                 elif self.game.ball.grabbed == False:
                     self.hero.grab()
         elif event.type == KEYUP:

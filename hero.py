@@ -69,6 +69,9 @@ class Hero(pygame.sprite.Sprite):
         if self.game.ball.grabbed and self.game.ball.grabbed_by == self:
             self.connection_handler.throw(self, power)
 
+    def throwing(self):
+        self.connection_handler.throwing(self, self.hold)
+
     def update(self, delta):
         if not self.holds_ball:
             self.velocity.x = self.movement.x * self.speed

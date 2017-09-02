@@ -9,6 +9,19 @@ from common.vector import Vector
 
 current_id = 0
 
+gate_distance = 0.1
+
+gates_astronaut = [
+    Vector(0.5, -0.4, 0.4),
+    Vector(1, -0.4, 0.75),
+    Vector(1.5, -0.4, 0.6),
+]
+
+gates_alien = [
+    Vector(0.55, 4.5, 0.45),
+    Vector(1, 4.5, 0.7),
+    Vector(1.55, 4.5, 0.6),
+]
 
 def get_id():
     global current_id
@@ -36,6 +49,10 @@ class Ball():
         self.grabbed_by = None
         self.__slow_factor_ground__ = 1.5
 
+    def set_at_center(self):
+        self.position = Vector(1.025, 2.075, 0)
+        self.velocity = Vector(0, 0, 0)
+
     def __slow_ground__(self, delta):
         self.velocity.x = self.__slow_single__(delta, self.velocity.x, self.__slow_factor_ground__)
         self.velocity.y = self.__slow_single__(delta, self.velocity.y, self.__slow_factor_ground__)
@@ -59,8 +76,8 @@ class Ball():
             self.velocity.y *= bounce_y
             self.velocity.z *= bounce_z
         else:
-            self.position.x = self.grabbed_by.position.x
-            self.position.y = self.grabbed_by.position.y
+            self.position.x = self.grabbed_by.position.x + 0.1
+            self.position.y = self.grabbed_by.position.y - 0.05
             self.position.z = self.grabbed_by.position.z + 0.25
 
     def __slow_single__(self, delta, v, slow_factor):
@@ -73,9 +90,6 @@ class Ball():
             if v > 0:
                 v = 0
         return 0
-
-    def is_in_ring(self):
-        return False
 
 
 class PlayerHandler():
@@ -101,6 +115,8 @@ class PlayerHandler():
             self.sock.send(length + message)
         except ConnectionResetError:
             print('Player {} (id: {}) has suddenly disconnected.')
+            self.server.players.remove(self)
+            self.sock.close()
 
     def handle(self):
         while True:
@@ -145,7 +161,6 @@ class PlayerHandler():
         # Send already existing players
         for player in self.server.players:
             if player is not self:
-                print("id {} to id {}".format(player.id, self.id))
                 self.send({
                     'operation': 'player_joined',
                     'name': player.name,
@@ -190,9 +205,9 @@ class PlayerHandler():
             self.server.ball.grabbed = False
             self.server.ball.grabbed_by = None
 
-            self.server.ball.velocity.x = data['vel_x'] * (1 + data['power'] * 3)
-            self.server.ball.velocity.y = data['vel_y'] * (1 + data['power'] * 3)
-            self.server.ball.velocity.z = 0.25 * (1 + data['power'])
+            self.server.ball.velocity.x = data['vel_x'] * (1 + data['power'] * 2)
+            self.server.ball.velocity.y = data['vel_y'] * (1 + data['power'] * 2)
+            self.server.ball.velocity.z = 0.5 * (1 + data['power'])
 
             self.server.tell_everyone({
                 'operation': 'ball_thrown',
@@ -202,6 +217,14 @@ class PlayerHandler():
                 'vel_z': self.server.ball.velocity.z
             })
 
+    def handle_throwing(self, data):
+        if self.server.ball.grabbed and self.server.ball.grabbed_by == self.server.get_player_by_id(data['id']):
+            player = self.server.get_player_by_id(data['id'])
+            self.server.tell_others(player, {
+                'operation': 'player_throwing',
+                'id': data['id'],
+                'hold': data['hold']
+            })
 
 class Server():
     def __init__(self):
@@ -215,6 +238,9 @@ class Server():
         self.score_limit = 9
 
         self.stage = 'LOBBY'
+
+        self.points_astronauts = 0
+        self.points_aliens = 0
 
         host = ''
         port = 9525
@@ -243,6 +269,30 @@ class Server():
             delta = tick / 1000
 
             self.ball.update(delta)
+
+            # Check if ball is in ring/gate
+            for gate in gates_astronaut:
+                if gate.dist(self.ball.position) < gate_distance:
+                    print('Aliens scored a goal')
+                    self.points_aliens += 1
+                    self.tell_everyone({
+                        'operation': 'goal',
+                        'team': 1,
+                        'points': self.points_aliens
+                    })
+                    self.ball.set_at_center()
+
+
+            for gate in gates_alien:
+                if gate.dist(self.ball.position) < gate_distance:
+                    print('Astronauts scored a goal')
+                    self.points_astronauts += 1
+                    self.tell_everyone({
+                        'operation': 'goal',
+                        'team': 0,
+                        'points': self.points_astronauts
+                    })
+                    self.ball.set_at_center()
 
             last_update += tick
             if (last_update > 20):

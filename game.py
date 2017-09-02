@@ -9,8 +9,6 @@ from input_handler import KeyboardInputHandler
 from tile import Tile
 from ball import BallDummy, BallShadow
 
-from pygame.locals import *
-
 
 class Game():
     def __init__(self, network, name, input_handler):
@@ -18,10 +16,12 @@ class Game():
         self.network.game = self
 
         pygame.init()
-        self.screen = pygame.display.set_mode((1280, 720), 0, 32)
+        self.SCREEN_WIDTH = 1280
+        self.SCREEN_HEIGHT = 720
+        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), 0, 32)
 
         pygame.display.set_caption("It's Super Cool!")
-        pygame.display.set_icon(pygame.image.load('assets/meteorFullRound_SW.png'))
+        pygame.display.set_icon(pygame.image.load('assets/icon.png'))
 
         self.surface = pygame.Surface(self.screen.get_size())
         self.surface = self.surface.convert_alpha()
@@ -38,28 +38,32 @@ class Game():
         self.background_sprites = pygame.sprite.Group()
         self.clock = pygame.time.Clock()
 
+        self.points_astronauts = 0
+        self.points_aliens = 0
+
         self.load_map()
         threading.Thread(target=network.handle).start()
         self.network.join(name, input_handler)
 
     def run(self):
+        first_run_time = time.time()
         while True:
             self.input()
             delta = self.clock.tick(60) / 1000
 
             self.background_sprites.draw(self.screen)
 
-            self.surface.fill((255, 255, 255))
-            text = self.font_big.render("It's Super Cool!", 1, (255, 255, 255))
-            text2 = self.font_big.render("It's Super Cool!", 1, (0, 0, 0))
-            textpos = text.get_rect()
-            textpos.centerx = 640
-            textpos.centery = 360
-            textpos2 = text2.get_rect()
-            textpos2.centerx = 640
-            textpos2.centery = 362
-            self.screen.blit(text2, textpos2)
-            self.screen.blit(text, textpos)
+            points_text = "Astronauts {}:{} Aliens".format(self.points_astronauts, self.points_aliens)
+            points_display = self.font_big.render(points_text, 1, (255, 255, 255))
+            points_display_shadow = self.font_big.render(points_text, 1, (0, 0, 0))
+            points_display_rect = points_display.get_rect()
+            points_display_rect.centerx = self.SCREEN_WIDTH / 2
+            points_display_rect.centery = 50
+            points_display_shadow_rect = points_display_shadow.get_rect()
+            points_display_shadow_rect.centerx = self.SCREEN_WIDTH / 2
+            points_display_shadow_rect.centery = 52
+            self.screen.blit(points_display_shadow, points_display_shadow_rect)
+            self.screen.blit(points_display, points_display_rect)
 
             self.ball.update(delta)
             self.ball_shadow.update()
@@ -91,6 +95,19 @@ class Game():
             action_sprites.add(self.heroes)
             action_sprites.add(self.ball)
             action_sprites.draw(self.screen)
+
+            if time.time() - 3 < first_run_time:
+                self.surface.fill((255, 255, 255))
+                text = self.font_big.render("It's Super Cool!", 1, (255, 255, 255))
+                text2 = self.font_big.render("It's Super Cool!", 1, (0, 0, 0))
+                textpos = text.get_rect()
+                textpos.centerx = 640
+                textpos.centery = 360
+                textpos2 = text2.get_rect()
+                textpos2.centerx = 640
+                textpos2.centery = 362
+                self.screen.blit(text2, textpos2)
+                self.screen.blit(text, textpos)
 
             pygame.display.flip()
             pygame.display.update()
