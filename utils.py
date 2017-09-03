@@ -1,6 +1,5 @@
 import pygame
-
-gravity = 0.96
+import settings
 
 __map_x_min = -0.22
 __map_x_max = 2.0
@@ -29,7 +28,7 @@ def bounce_to_map(x, y, z):
     bounce_x = 1
     bounce_y = 1
     bounce_z = 1
-    bounce_ratio = -0.5
+    bounce_ratio = -1 * settings.BOUNCE_RATIO
 
     if x < __map_x_min:
         bounce_x = bounce_ratio

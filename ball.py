@@ -1,7 +1,7 @@
 import pygame
+import settings
 import utils
-
-from common.vector import Vector
+from vector import Vector
 
 
 class BallDummy(pygame.sprite.Sprite):
@@ -17,7 +17,7 @@ class BallDummy(pygame.sprite.Sprite):
 
     def update(self, delta):
         if self.grabbed == False:
-            self.velocity.z -= delta * utils.gravity
+            self.velocity.z -= delta * settings.GRAVITY
 
             self.position.x += delta * self.velocity.x
             self.position.y += delta * self.velocity.y

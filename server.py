@@ -1,15 +1,14 @@
 import json
+import random
 import socket
 import threading
-import utils
-import random
 import pygame
+import utils
+import settings
 
-from common.vector import Vector
+from vector import Vector
 
 current_id = 0
-
-gate_distance = 0.1
 
 gates_astronaut = [
     Vector(0.5, -0.4, 0.4),
@@ -49,6 +48,10 @@ class Ball():
         self.grabbed_by = None
         self.__slow_factor_ground__ = 1.5
 
+        self.set_at_center()
+
+        self.bounced = False
+
     def set_at_center(self):
         self.position = Vector(1.025, 2.075, 0)
         self.velocity = Vector(0, 0, 0)
@@ -60,7 +63,7 @@ class Ball():
 
     def update(self, delta):
         if self.grabbed == False:
-            self.velocity.z -= delta * utils.gravity
+            self.velocity.z -= delta * settings.GRAVITY
 
             if self.position.z - 0.1 <= 0:
                 self.__slow_ground__(delta)
@@ -71,6 +74,9 @@ class Ball():
 
             bounce_x, bounce_y, bounce_z = utils.bounce_to_map(*self.position.xyz())
             self.position.x, self.position.y, self.position.z = utils.cut_to_map(*self.position.xyz())
+
+            if bounce_x < 0 or bounce_y < 0 or bounce_z < 0:
+                self.bounced = True
 
             self.velocity.x *= bounce_x
             self.velocity.y *= bounce_y
@@ -192,7 +198,7 @@ class PlayerHandler():
         })
 
     def handle_grab(self, data):
-        if self.server.ball.grabbed == False and self.server.ball.position.dist(self.position) < 0.22:
+        if self.server.ball.grabbed == False and self.server.ball.position.dist(self.position) < settings.GRAB_RANGE:
             self.server.ball.grabbed = True
             self.server.ball.grabbed_by = self
             self.server.tell_everyone({
@@ -229,7 +235,7 @@ class PlayerHandler():
     def handle_beat(self, data):
         if self.server.ball.grabbed:
             attacker = self.server.get_player_by_id(data['id'])
-            if self.server.ball.grabbed_by.position.dist(attacker.position) < 0.4:
+            if self.server.ball.grabbed_by.position.dist(attacker.position) < settings.HIT_RANGE:
                 success = random.choice([True, True, True, False])
                 if success:
                     self.server.ball.velocity.x = self.server.ball.grabbed_by.velocity.x
@@ -244,12 +250,12 @@ class PlayerHandler():
                         'vel_z': self.server.ball.velocity.z
                     })
 
-                    self.server.stun_player(self.server.ball.grabbed_by, 1.5)
+                    self.server.stun_player(self.server.ball.grabbed_by, settings.STUN)
 
                     self.server.ball.grabbed = False
                     self.server.ball.grabbed_by = None
                 else:
-                    self.server.stun_player(attacker, 2.5)
+                    self.server.stun_player(attacker, settings.STUN_SELF)
 
 
 class Server():
@@ -308,10 +314,16 @@ class Server():
             delta = tick / 1000
 
             self.ball.update(delta)
+            if self.ball.bounced:
+                self.tell_everyone({
+                    'operation': 'play_sound',
+                    'sound': 'bounce'
+                })
+                self.ball.bounced = False
 
             # Check if ball is in ring/gate
             for gate in gates_astronaut:
-                if gate.dist(self.ball.position) < gate_distance:
+                if gate.dist(self.ball.position) < settings.GATE_GOAL_DISTANCE:
                     print('Aliens scored a goal')
                     self.points_aliens += 1
                     self.tell_everyone({
@@ -323,7 +335,7 @@ class Server():
 
 
             for gate in gates_alien:
-                if gate.dist(self.ball.position) < gate_distance:
+                if gate.dist(self.ball.position) < settings.GATE_GOAL_DISTANCE:
                     print('Astronauts scored a goal')
                     self.points_astronauts += 1
                     self.tell_everyone({

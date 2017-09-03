@@ -1,9 +1,10 @@
-import pygame
 import math
-import utils
 import time
+import settings
+import pygame
 
-from common.vector import Vector
+import utils
+from vector import Vector
 
 
 class Hero(pygame.sprite.Sprite):
@@ -64,7 +65,7 @@ class Hero(pygame.sprite.Sprite):
         self.move(225, stop=stop)
 
     def grab(self):
-        if self.game.ball.grabbed == False and self.game.ball.position.dist(self.position) < 0.2:
+        if self.game.ball.grabbed == False and self.game.ball.position.dist(self.position) < settings.GRAB_RANGE:
             self.connection_handler.grab(self)
 
     def throw(self, power):
@@ -72,7 +73,7 @@ class Hero(pygame.sprite.Sprite):
             self.connection_handler.throw(self, power)
 
     def beat(self):
-        if self.game.ball.grabbed_by.position.dist(self.position) < 0.4:
+        if self.game.ball.grabbed_by.position.dist(self.position) < settings.HIT_RANGE:
             self.connection_handler.beat(self)
 
     def throwing(self):

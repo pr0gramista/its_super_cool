@@ -1,7 +1,7 @@
 import json
 
-from common.vector import Vector
 from hero import Hero
+from vector import Vector
 
 
 class ConnectionHandler():
@@ -139,6 +139,8 @@ class ConnectionHandler():
         ball.grabbed_by = hero
         hero.holds_ball = True
 
+        self.game.play_sound('hit2')
+
     def handle_ball_thrown(self, data):
         ball = self.game.ball
         ball.grabbed = False
@@ -153,21 +155,31 @@ class ConnectionHandler():
         ball.velocity.y = data['vel_y']
         ball.velocity.z = data['vel_z']
 
+        self.game.play_sound('swish')
+
     def handle_goal(self, data):
         if data['team'] == 0:
             self.game.points_astronauts = data['points']
         elif data['team'] == 1:
             self.game.points_aliens = data['points']
+        self.game.play_sound('goal')
 
     def handle_player_throwing(self, data):
         hero = self.game.get_hero(data['id'])
         hero.throws = True
         hero.hold = data['hold']
 
+        self.game.play_sound('swish')
+
     def handle_stun(self, data):
         hero = self.game.get_hero(data['id'])
         hero.stun(data['duration'])
+        self.game.play_sound('stun')
 
     def handle_player_stunned(self, data):
         hero = self.game.get_hero(data['id'])
         hero.stun(data['duration'])
+        self.game.play_sound('stun')
+
+    def handle_play_sound(self, data):
+        self.game.play_sound(data['sound'])

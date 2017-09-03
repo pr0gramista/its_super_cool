@@ -29,6 +29,7 @@ class Game():
         self.font_big = pygame.font.Font(None, 72)
         self.font_small = pygame.font.Font(None, 20)
 
+        self.sounds = {}
         self.players = []
         self.input_handlers = []
         self.heroes = []
@@ -42,8 +43,12 @@ class Game():
         self.points_aliens = 0
 
         self.load_map()
+        self.load_sounds()
+
         threading.Thread(target=network.handle).start()
         self.network.join(name, input_handler)
+
+        self.play_sound('cheer', loops=-1)
 
     def run(self):
         first_run_time = time.time()
@@ -140,6 +145,22 @@ class Game():
         map.rect.y = -200
 
         self.background_sprites.add(map)
+
+    def load_sounds(self):
+        self.sounds['hit'] = pygame.mixer.Sound('sounds/hit.ogg')
+        self.sounds['hit2'] = pygame.mixer.Sound('sounds/hit2.ogg')
+        self.sounds['swish'] = pygame.mixer.Sound('sounds/swish.ogg')
+        self.sounds['stun'] = pygame.mixer.Sound('sounds/stun.ogg')
+        self.sounds['bounce'] = pygame.mixer.Sound('sounds/bounce.ogg')
+        self.sounds['cheer'] = pygame.mixer.Sound('sounds/cheer.ogg')
+        self.sounds['goal'] = pygame.mixer.Sound('sounds/goal.ogg')
+
+        for sound in self.sounds.values():
+            sound.set_volume(0.5)
+        self.sounds['cheer'].set_volume(0.10)
+
+    def play_sound(self, sound, loops=0):
+        self.sounds[sound].play(loops)
 
 
 def connect(address):

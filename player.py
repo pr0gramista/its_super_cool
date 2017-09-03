@@ -1,5 +1,5 @@
-from common.settings import SPECTATORS
-from common.vector import Vector
+from settings import SPECTATORS
+from vector import Vector
 
 
 class Player():
