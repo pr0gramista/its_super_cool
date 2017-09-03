@@ -14,7 +14,6 @@ class ConnectionHandler():
         message = json.dumps(data).encode('utf-8')
         length = len(message).to_bytes(4, byteorder='big')
         self.sock.send(length + message)
-        # self.sock.send(json.dumps(data).encode('utf-8'))
 
     def join(self, name, input_handler):
         self.name = name
@@ -57,8 +56,11 @@ class ConnectionHandler():
     def handle(self):
         while True:
             try:
-                length = self.sock.recv(4)
-                data = self.sock.recv(int.from_bytes(length, byteorder='big'))
+                length_bytes = self.sock.recv(4)
+                length = int.from_bytes(length_bytes, byteorder='big')
+                data = self.sock.recv(length)
+                while len(data) < length:
+                    data += self.sock.recv(length - len(data))
                 if data:
                     data = json.loads(data, encoding='utf-8')
                     if 'operation' in data and len(data['operation']) > 0:

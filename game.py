@@ -2,11 +2,12 @@ import pygame
 import socket
 import threading
 import time
+import utils
 
 from connection_handler import ConnectionHandler
 from input_handler import KeyboardInputHandler
 
-from tile import Tile
+from tile import Tile, Gate, ConsoleTop, ConsoleBottom
 from ball import BallDummy, BallShadow
 
 
@@ -35,12 +36,14 @@ class Game():
         self.heroes = []
         self.ball = BallDummy()
         self.ball_shadow = BallShadow(self.ball)
+        self.main_sprites = []
 
         self.background_sprites = pygame.sprite.Group()
         self.clock = pygame.time.Clock()
 
         self.points_astronauts = 0
         self.points_aliens = 0
+        self.action_sprites = pygame.sprite.Group()
 
         self.load_map()
         self.load_sounds()
@@ -96,11 +99,20 @@ class Game():
                     'vel_z': hero.movement.z,
                 })
 
-            action_sprites = pygame.sprite.Group()
-            action_sprites.add(self.ball_shadow)
-            action_sprites.add(self.heroes)
-            action_sprites.add(self.ball)
-            action_sprites.draw(self.screen)
+            sprites_to_draw = self.main_sprites.copy()
+            sprites_to_draw.append(self.ball)
+            sprites_to_draw += self.heroes
+
+            sprites_to_draw = sorted(sprites_to_draw, key=lambda s:  - (s.position.y - s.rect.height * 0.00925925))
+
+            self.action_sprites.empty()
+            for s in sprites_to_draw:
+                if s is self.ball:
+                    self.action_sprites.add(self.ball_shadow)
+                self.action_sprites.add(s)
+                #pygame.draw.circle(self.screen, (255, 0, 0), [round(s.position.x * 20), round(s.position.y * 20 - s.rect.height * 0.00925925 * 20)], 2)
+            self.action_sprites.add(self.console_bottom)
+            self.action_sprites.draw(self.screen)
 
             if time.time() - 3 < first_run_time:
                 self.surface.fill((255, 255, 255))
@@ -139,12 +151,19 @@ class Game():
                 self.background_sprites.add(tile)
 
         map = pygame.sprite.Sprite()
-        map.image = pygame.transform.scale(pygame.image.load("map.png").convert_alpha(), (1302, 1146))
+        map.image = pygame.transform.scale(pygame.image.load("assets/map.png").convert_alpha(), (1302, 1146))
         map.rect = map.image.get_rect()
         map.rect.x = 0
         map.rect.y = -200
 
         self.background_sprites.add(map)
+        self.background_sprites.add(ConsoleTop())
+
+        self.console_bottom = ConsoleBottom()
+
+        for i in range(1, 7):
+            gate = Gate(i)
+            self.main_sprites.append(gate)
 
     def load_sounds(self):
         self.sounds['hit'] = pygame.mixer.Sound('sounds/hit.ogg')
@@ -176,7 +195,7 @@ if __name__ == '__main__':
     #    address = 'localhost'
     #
     # handler = connect(address)
-    handler = connect('localhost')
+    handler = connect('25.59.124.94')
 
     print('Connected')
 

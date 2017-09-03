@@ -12,3 +12,6 @@ class Vector():
 
     def dist(self, b):
         return math.hypot(math.hypot(self.x - b.x, self.y - b.y), self.z - b.z)
+
+    def copy(self):
+        return Vector(self.x, self.y, self.z)

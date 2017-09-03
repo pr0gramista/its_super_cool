@@ -11,15 +11,27 @@ from vector import Vector
 current_id = 0
 
 gates_astronaut = [
-    Vector(0.5, -0.4, 0.4),
-    Vector(1, -0.4, 0.75),
-    Vector(1.5, -0.4, 0.6),
+    Vector(0.5, -0.5, 0.4),
+    Vector(1, -0.5, 0.75),
+    Vector(1.5, -0.5, 0.6),
 ]
 
 gates_alien = [
-    Vector(0.55, 4.5, 0.45),
-    Vector(1, 4.5, 0.7),
-    Vector(1.55, 4.5, 0.6),
+    Vector(0.55, 4.6, 0.45),
+    Vector(1, 4.6, 0.7),
+    Vector(1.55, 4.6, 0.6),
+]
+
+starts_astronaut = [
+    Vector(1.35, 0.2, 0),
+    Vector(0.9, 0.2, 0),
+    Vector(0.4, 0.2, 0),
+]
+
+starts_alien = [
+    Vector(0.4, 4.2, 0),
+    Vector(0.9, 4.2, 0),
+    Vector(1.35, 4.2, 0),
 ]
 
 def get_id():
@@ -127,8 +139,11 @@ class PlayerHandler():
     def handle(self):
         while True:
             try:
-                length = self.sock.recv(4)
-                data = self.sock.recv(int.from_bytes(length, byteorder='big'))
+                length_bytes = self.sock.recv(4)
+                length = int.from_bytes(length_bytes, byteorder='big')
+                data = self.sock.recv(length)
+                while len(data) < length:
+                    data += self.sock.recv(length - len(data))
                 if data:
                     data = json.loads(data, encoding='utf-8')
                     if 'operation' in data and len(data['operation']) > 0:
@@ -144,14 +159,20 @@ class PlayerHandler():
     def handle_join(self, data):
         self.name = data['name']
 
+        if self.team == settings.TEAM_ASTRONAUTS:
+            self.position = random.choice(starts_astronaut.copy())
+        elif self.team == settings.TEAM_ALIENS:
+            self.position = random.choice(starts_alien.copy())
+
+
         self.server.tell_others(self, {
             'operation': 'player_joined',
             'id': self.id,
             'name': self.name,
             'team': self.team,
-            'x': 0,
-            'y': 0,
-            'z': 0
+            'x': self.position.x,
+            'y': self.position.y,
+            'z': self.position.z
         })
 
         self.send({
@@ -159,9 +180,9 @@ class PlayerHandler():
             'name': self.name,
             'id': self.id,
             'team': self.team,
-            'x': 0,
-            'y': 0,
-            'z': 0
+            'x': self.position.x,
+            'y': self.position.y,
+            'z': self.position.z
         })
 
         # Send already existing players

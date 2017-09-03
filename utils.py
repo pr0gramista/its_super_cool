@@ -8,7 +8,6 @@ __max_y_max = 4.8
 
 
 def get_position(x, y, z):
-    global camera_x, camera_y
     pox = (x + y) * 75 + 360
     poy = (x - y) * 54 + 415 + (-54 * z)  # Invert z
     return (pox, poy)
