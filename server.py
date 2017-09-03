@@ -34,6 +34,7 @@ starts_alien = [
     Vector(1.35, 4.2, 0),
 ]
 
+
 def get_id():
     global current_id
     current_id += 1
@@ -173,7 +174,6 @@ class PlayerHandler():
             self.position = random.choice(starts_astronaut.copy())
         elif self.team == settings.TEAM_ALIENS:
             self.position = random.choice(starts_alien.copy())
-
 
         self.server.tell_others(self, {
             'operation': 'player_joined',
@@ -363,7 +363,6 @@ class Server():
                         'points': self.points_aliens
                     })
                     self.ball.set_at_center()
-
 
             for gate in gates_alien:
                 if gate.dist(self.ball.position) < settings.GATE_GOAL_DISTANCE:

@@ -3,12 +3,15 @@ import socket
 import threading
 import time
 import settings
+import random
 
 from connection_handler import ConnectionHandler
 from input_handler import KeyboardInputHandler
 
-from tile import Tile, Gate, ConsoleTop, ConsoleBottom
+from tile import Tile, Gate, ConsoleTop, ConsoleBottom, Spectator
 from ball import BallDummy, BallShadow
+
+from vector import Vector
 
 
 class Game():
@@ -43,6 +46,7 @@ class Game():
         self.ball = BallDummy()
         self.ball_shadow = BallShadow(self.ball)
         self.main_sprites = []
+        self.spectators = []
 
         self.background_sprites = pygame.sprite.Group()
         self.clock = pygame.time.Clock()
@@ -84,16 +88,18 @@ class Game():
             self.ball.update(delta)
             self.ball_shadow.update()
 
+            for spectator in self.spectators:
+                spectator.check_timer()
+
             for hero in self.heroes:
                 hero.update(delta)
 
                 if hero.throws:
                     power = min(2, time.time() - hero.hold) / 2
                     pygame.draw.rect(self.canvas, (0, 0, 0),
-                                     (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50, 20))
+                                     (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50, 10))
                     pygame.draw.rect(self.canvas, (255, 255, 255),
-                                     (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50 * power, 20))
-
+                                     (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50 * power, 10))
 
             for input_handler in self.input_handlers:
                 hero = input_handler.hero
@@ -111,7 +117,7 @@ class Game():
             sprites_to_draw.append(self.ball)
             sprites_to_draw += self.heroes
 
-            sprites_to_draw = sorted(sprites_to_draw, key=lambda s:  - (s.position.y - s.rect.height * 0.00925925))
+            sprites_to_draw = sorted(sprites_to_draw, key=lambda s: - (s.position.y - s.rect.height * 0.00925925))
 
             self.action_sprites.empty()
             for s in sprites_to_draw:
@@ -147,7 +153,8 @@ class Game():
                     pygame.transform.smoothscale(self.canvas, (scaled_width, scaled_height), self.canvas_scaled)
                 else:
                     pygame.transform.scale(self.canvas, (scaled_width, scaled_height), self.canvas_scaled)
-                self.screen.blit(self.canvas_scaled, ((self.screen_width - scaled_width) / 2, (self.screen_height - scaled_height) / 2))
+                self.screen.blit(self.canvas_scaled,
+                                 ((self.screen_width - scaled_width) / 2, (self.screen_height - scaled_height) / 2))
 
             pygame.display.flip()
             pygame.display.update()
@@ -209,6 +216,34 @@ class Game():
             gate = Gate(i)
             self.main_sprites.append(gate)
 
+        for i in range(random.randint(10, 30)):
+            x = (-0.6, -1.8)
+            y = (-0.2, 5.2)
+            spectator = Spectator('SE', Vector(x[0] + random.random() * x[1], y[0] + random.random() * y[1], 0))
+            self.spectators.append(spectator)
+            self.background_sprites.add(spectator)
+
+        for i in range(random.randint(5, 15)):
+            x = (-0.4, 2.8)
+            y = (-1.0, -0.4)
+            spectator = Spectator('NE', Vector(x[0] + random.random() * x[1], y[0] + random.random() * y[1], 0))
+            self.spectators.append(spectator)
+            self.background_sprites.add(spectator)
+
+        for i in range(random.randint(10, 30)):
+            x = (2.8, 0.4)
+            y = (-0.6, 5.4)
+            spectator = Spectator('NW', Vector(x[0] + random.random() * x[1], y[0] + random.random() * y[1], 0))
+            self.spectators.append(spectator)
+            self.background_sprites.add(spectator)
+
+        for i in range(random.randint(10, 15)):
+            x = (-0.2, 2.4)
+            y = (5.4, 1.2)
+            spectator = Spectator('SW', Vector(x[0] + random.random() * x[1], y[0] + random.random() * y[1], 0))
+            self.spectators.append(spectator)
+            self.background_sprites.add(spectator)
+
     def load_sounds(self):
         self.sounds['hit'] = pygame.mixer.Sound('sounds/hit.ogg')
         self.sounds['hit2'] = pygame.mixer.Sound('sounds/hit2.ogg')
@@ -240,7 +275,7 @@ if __name__ == '__main__':
     else:
         address = input('Server address please (leave empty for localhost):')
         if len(address) == 0:
-            pass
+            address = 'localhost'
 
     nickname = settings.NICKNAME
     if len(nickname) > 0:

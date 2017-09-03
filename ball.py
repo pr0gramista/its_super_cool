@@ -45,7 +45,7 @@ class BallShadow(pygame.sprite.Sprite):
 
     def update(self):
         self.position.x = self.ball.position.x
-        self.position.y = self.ball.position.y - 0.01 # Magic
+        self.position.y = self.ball.position.y - 0.01  # Magic
         self.position.z = 0
 
         self.rect.x, self.rect.y = utils.get_position(*self.position.xyz())

@@ -20,17 +20,16 @@ class InputHandler():
 
 
 class KeyboardInputHandler(InputHandler):
-    def __init__(self, keys='wasdjk'):
+    def __init__(self, keys='wasdj'):
         keys = keys.lower()
-        if len(keys) == 6:
+        if len(keys) == 5:
             self.UP = ord(keys[0])
             self.LEFT = ord(keys[1])
             self.DOWN = ord(keys[2])
             self.RIGHT = ord(keys[3])
             self.ACTION_1 = ord(keys[4])
-            self.ACTION_2 = ord(keys[5])
         else:
-            print('Keyboard input handler not set correctly (missing exactly 4 keys)')
+            print('Keyboard input handler not set correctly (missing exactly 5 keys)')
 
         self.throws = False
 

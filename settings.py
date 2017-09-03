@@ -1,6 +1,6 @@
 SERVER = ''
 NICKNAME = ''
-KEYBOARD_MAPPING = 'wasdj' # J - action button
+KEYBOARD_MAPPING = 'wasdj'  # J - action button
 
 RESOLUTION_X = 1280
 RESOLUTION_Y = 720
