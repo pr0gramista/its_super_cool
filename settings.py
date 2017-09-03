@@ -1,12 +1,12 @@
 SERVER = ''
 NICKNAME = ''
-KEYBOARD_MAPPING = 'wasdb'  # B - action button
+KEYBOARD_MAPPING = 'wasdj'  # B - action button
 
 RESOLUTION_X = 1280
 RESOLUTION_Y = 720
 
 # Uncomment for multiple players on the same machine
-# PLAYER_2 = ('Bob', 'ijkl;')
+# PLAYER_2 = ('Bob', 'ijkl;', 0)
 # PLAYER_3 = ...
 
 QUALITY_SCALING = True

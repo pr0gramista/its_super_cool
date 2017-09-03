@@ -10,6 +10,7 @@ import threading
 import time
 import settings
 import random
+import sys
 
 from connection_handler import ConnectionHandler
 from input_handler import KeyboardInputHandler
@@ -73,7 +74,7 @@ class Game():
             networking_thread = threading.Thread(target=player_to_call['network'].handle)
             networking_thread.daemon = True
             networking_thread.start()
-            player_to_call['network'].join(player_to_call['name'], player_to_call['input_handler'])
+            player_to_call['network'].join(player_to_call['name'], player_to_call['input_handler'], player_to_call['team'])
 
         self.play_sound('cheer', loops=-1)
 
@@ -291,13 +292,19 @@ if __name__ == '__main__':
 
     handler = connect(address)
 
+    team_str = input('Team (0 - for astronauts, 1 - for aliens)')
+    team = int(team_str)
+    if team > 1 or team < 0:
+        sys.exit()
+
     print('Connected to {}'.format(address))
 
     players_to_call = []
     players_to_call.append({
         'network': handler,
         'name': nickname,
-        'input_handler': KeyboardInputHandler(settings.KEYBOARD_MAPPING)
+        'input_handler': KeyboardInputHandler(settings.KEYBOARD_MAPPING),
+        'team': team
     })
 
     # Run additional players
@@ -309,7 +316,8 @@ if __name__ == '__main__':
                 players_to_call.append({
                     'network': handler_2,
                     'name': player_settings[0],
-                    'input_handler': KeyboardInputHandler(player_settings[1])
+                    'input_handler': KeyboardInputHandler(player_settings[1]),
+                    'team': player_settings[2]
                 })
         except AttributeError:
             pass

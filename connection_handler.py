@@ -15,13 +15,14 @@ class ConnectionHandler():
         length = len(message).to_bytes(4, byteorder='big')
         self.sock.send(length + message)
 
-    def join(self, name, input_handler):
+    def join(self, name, input_handler, team):
         self.name = name
         self.input_handler = input_handler
 
         self.send({
             'operation': 'join',
-            'name': name
+            'name': name,
+            'team': team
         })
 
     def grab(self, hero):

@@ -11,9 +11,9 @@ from vector import Vector
 current_id = 0
 
 gates_astronaut = [
-    Vector(0.5, -0.5, 0.4),
-    Vector(1, -0.5, 0.75),
-    Vector(1.5, -0.5, 0.6),
+    Vector(0.5, -0.4, 0.4),
+    Vector(1, -0.4, 0.75),
+    Vector(1.5, -0.4, 0.6),
 ]
 
 gates_alien = [
@@ -184,11 +184,12 @@ class PlayerHandler():
 
     def handle_join(self, data):
         self.name = data['name']
+        self.team = data['team']
 
-        if self.team == settings.TEAM_ASTRONAUTS:
-            self.position = random.choice(starts_astronaut.copy())
-        elif self.team == settings.TEAM_ALIENS:
-            self.position = random.choice(starts_alien.copy())
+        if self.team == 0:
+            self.position = random.choice(starts_astronaut).copy()
+        else:
+            self.position = random.choice(starts_alien).copy()
 
         self.server.tell_others(self, {
             'operation': 'player_joined',

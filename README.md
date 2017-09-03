@@ -26,4 +26,4 @@ and they are license under their [EULA](http://www.freesfx.co.uk/info/eula/)
 
 **Play only with people you trust, this game is 0% cheat pr00f.**
 
-Bugs present.
+### Don't rush with anything, it will crash, derp.
