@@ -93,9 +93,12 @@ class Hero(pygame.sprite.Sprite):
 
             self.position.x, self.position.y, self.position.z = utils.cut_to_map(*self.position.xyz())
 
-            angle = round(math.degrees(math.atan2(self.velocity.y, self.velocity.x)))
-            if angle in self.images:
-                self.image = self.images[angle]
+            if round(self.movement.x, 2) == 0 and round(self.movement.y, 2) == 0:
+                pass
+            else:
+                angle = round(math.degrees(math.atan2(self.velocity.y, self.velocity.x)))
+                if angle in self.images:
+                    self.image = self.images[angle]
         else:
             self.stunned = not time.time() > self.stun_time
 

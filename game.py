@@ -2,7 +2,7 @@ import pygame
 import socket
 import threading
 import time
-import utils
+import settings
 
 from connection_handler import ConnectionHandler
 from input_handler import KeyboardInputHandler
@@ -17,21 +17,27 @@ class Game():
         self.network.game = self
 
         pygame.init()
-        self.SCREEN_WIDTH = 1280
-        self.SCREEN_HEIGHT = 720
-        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT), 0, 32)
+
+        self.screen = pygame.display.set_mode((settings.RESOLUTION_X, settings.RESOLUTION_Y), pygame.RESIZABLE)
+
+        self.canvas_width = 1280
+        self.canvas_height = 720
+        self.screen_width = settings.RESOLUTION_X
+        self.screen_height = settings.RESOLUTION_Y
 
         pygame.display.set_caption("It's Super Cool!")
         pygame.display.set_icon(pygame.image.load('assets/icon.png'))
 
-        self.surface = pygame.Surface(self.screen.get_size())
+        self.canvas = pygame.Surface((self.canvas_width, self.canvas_height))
+        self.canvas_scaled = None
+
+        self.surface = pygame.Surface((self.canvas_width, self.canvas_height))
         self.surface = self.surface.convert_alpha()
         self.screen.blit(self.surface, (0, 0))
         self.font_big = pygame.font.Font(None, 72)
         self.font_small = pygame.font.Font(None, 20)
 
         self.sounds = {}
-        self.players = []
         self.input_handlers = []
         self.heroes = []
         self.ball = BallDummy()
@@ -48,7 +54,9 @@ class Game():
         self.load_map()
         self.load_sounds()
 
-        threading.Thread(target=network.handle).start()
+        networking_thread = threading.Thread(target=network.handle)
+        networking_thread.daemon = True
+        networking_thread.start()
         self.network.join(name, input_handler)
 
         self.play_sound('cheer', loops=-1)
@@ -59,19 +67,19 @@ class Game():
             self.input()
             delta = self.clock.tick(60) / 1000
 
-            self.background_sprites.draw(self.screen)
+            self.background_sprites.draw(self.canvas)
 
             points_text = "Astronauts {}:{} Aliens".format(self.points_astronauts, self.points_aliens)
             points_display = self.font_big.render(points_text, 1, (255, 255, 255))
             points_display_shadow = self.font_big.render(points_text, 1, (0, 0, 0))
             points_display_rect = points_display.get_rect()
-            points_display_rect.centerx = self.SCREEN_WIDTH / 2
+            points_display_rect.centerx = self.canvas_width / 2
             points_display_rect.centery = 50
             points_display_shadow_rect = points_display_shadow.get_rect()
-            points_display_shadow_rect.centerx = self.SCREEN_WIDTH / 2
+            points_display_shadow_rect.centerx = self.canvas_width / 2
             points_display_shadow_rect.centery = 52
-            self.screen.blit(points_display_shadow, points_display_shadow_rect)
-            self.screen.blit(points_display, points_display_rect)
+            self.canvas.blit(points_display_shadow, points_display_shadow_rect)
+            self.canvas.blit(points_display, points_display_rect)
 
             self.ball.update(delta)
             self.ball_shadow.update()
@@ -81,9 +89,9 @@ class Game():
 
                 if hero.throws:
                     power = min(2, time.time() - hero.hold) / 2
-                    pygame.draw.rect(self.screen, (0, 0, 0),
+                    pygame.draw.rect(self.canvas, (0, 0, 0),
                                      (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50, 20))
-                    pygame.draw.rect(self.screen, (255, 255, 255),
+                    pygame.draw.rect(self.canvas, (255, 255, 255),
                                      (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50 * power, 20))
 
 
@@ -110,9 +118,8 @@ class Game():
                 if s is self.ball:
                     self.action_sprites.add(self.ball_shadow)
                 self.action_sprites.add(s)
-                #pygame.draw.circle(self.screen, (255, 0, 0), [round(s.position.x * 20), round(s.position.y * 20 - s.rect.height * 0.00925925 * 20)], 2)
             self.action_sprites.add(self.console_bottom)
-            self.action_sprites.draw(self.screen)
+            self.action_sprites.draw(self.canvas)
 
             if time.time() - 3 < first_run_time:
                 self.surface.fill((255, 255, 255))
@@ -124,8 +131,23 @@ class Game():
                 textpos2 = text2.get_rect()
                 textpos2.centerx = 640
                 textpos2.centery = 362
-                self.screen.blit(text2, textpos2)
-                self.screen.blit(text, textpos)
+                self.canvas.blit(text2, textpos2)
+                self.canvas.blit(text, textpos)
+
+            # Final draw
+            self.screen.fill((0, 0, 0))
+            if self.canvas_width == self.screen_width and self.canvas_height == self.screen_height:
+                self.screen.blit(self.canvas, (0, 0))
+            else:
+                scaled_size = self.canvas_scaled.get_size()
+                scaled_width = scaled_size[0]
+                scaled_height = scaled_size[1]
+
+                if settings.QUALITY_SCALING:
+                    pygame.transform.smoothscale(self.canvas, (scaled_width, scaled_height), self.canvas_scaled)
+                else:
+                    pygame.transform.scale(self.canvas, (scaled_width, scaled_height), self.canvas_scaled)
+                self.screen.blit(self.canvas_scaled, ((self.screen_width - scaled_width) / 2, (self.screen_height - scaled_height) / 2))
 
             pygame.display.flip()
             pygame.display.update()
@@ -138,9 +160,31 @@ class Game():
 
     def input(self):
         for event in pygame.event.get():
-            for input_handler in self.input_handlers:
-                if input_handler.handle(event):  # Handler did handle it
-                    break
+            if event.type == pygame.VIDEORESIZE:
+                self.screen_width = event.w
+                self.screen_height = event.h
+
+                a = self.screen_width / self.canvas_width
+                b = self.screen_height / self.canvas_height
+
+                scaled_width = 0
+                scaled_height = 0
+                if self.canvas_height * a < self.screen_height:
+                    scaled_width = self.canvas_width * a
+                    scaled_height = self.canvas_height * a
+                else:
+                    scaled_width = self.canvas_width * b
+                    scaled_height = self.canvas_height * b
+
+                scaled_width = round(scaled_width)
+                scaled_height = round(scaled_height)
+
+                self.canvas_scaled = pygame.Surface((scaled_width, scaled_height))
+                self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+            else:
+                for input_handler in self.input_handlers:
+                    if input_handler.handle(event):  # Handler did handle it
+                        break
 
     def load_map(self):
         for x in range(20):
@@ -189,19 +233,24 @@ def connect(address):
 
 
 if __name__ == '__main__':
-    # Todo: uncomment
-    # address = input('Server address please (leave empty for localhost):')
-    # if len(address) == 0:
-    #    address = 'localhost'
-    #
-    # handler = connect(address)
-    handler = connect('25.59.124.94')
+    address = 'localhost'
+    if len(settings.SERVER) > 0:
+        print('Connecting to server address from settings')
+        address = settings.SERVER
+    else:
+        address = input('Server address please (leave empty for localhost):')
+        if len(address) == 0:
+            pass
 
-    print('Connected')
+    nickname = settings.NICKNAME
+    if len(nickname) > 0:
+        print('Nickname loaded from settings')
+    else:
+        nickname = input('Type in your nickname (edit your settings to avoid this step):')
 
-    time.sleep(1)
+    handler = connect(address)
 
-    # configs = [('Kamil', KeyboardInputHandler('wasd'))]
+    print('Connected to {}'.format(address))
 
-    game = Game(handler, 'Mati', KeyboardInputHandler('wasdjk'))
+    game = Game(handler, nickname, KeyboardInputHandler(settings.KEYBOARD_MAPPING))
     game.run()

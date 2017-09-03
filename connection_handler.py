@@ -106,6 +106,10 @@ class ConnectionHandler():
         position = Vector(data['x'], data['y'], data['z'])
         team = data['team']
 
+        am_i_clone = self.game.get_hero(data['id'])
+        if am_i_clone is not None:
+            self.game.heroes.remove(am_i_clone)
+
         print('Player {} (id: {}) joined'.format(name, id))
 
         new_hero = Hero(id, team)
@@ -185,3 +189,8 @@ class ConnectionHandler():
 
     def handle_play_sound(self, data):
         self.game.play_sound(data['sound'])
+
+    def handle_player_disconnected(self, data):
+        print('Player {} (id: {}) disconnected'.format(data['name'], data['id']))
+        hero = self.game.get_hero(data['id'])
+        self.game.heroes.remove(hero)

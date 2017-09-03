@@ -1,3 +1,13 @@
+SERVER = ''
+NICKNAME = ''
+KEYBOARD_MAPPING = 'wasdj' # J - action button
+
+RESOLUTION_X = 1280
+RESOLUTION_Y = 720
+
+QUALITY_SCALING = True
+
+# Game settings, you probably should not touch this
 TEAM_ASTRONAUTS = 0
 TEAM_ALIENS = 1
 
@@ -11,4 +21,4 @@ BOUNCE_RATIO = 0.75
 
 GRAVITY = 0.86
 
-GATE_GOAL_DISTANCE = 0.15
+GATE_GOAL_DISTANCE = 0.12

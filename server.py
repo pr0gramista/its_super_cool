@@ -134,6 +134,11 @@ class PlayerHandler():
         except ConnectionResetError:
             print('Player {} (id: {}) has suddenly disconnected.')
             self.server.players.remove(self)
+            self.server.tell_everyone({
+                'operation': 'player_disconnected',
+                'id': self.id,
+                'name': self.name
+            })
             self.sock.close()
 
     def handle(self):
@@ -153,6 +158,11 @@ class PlayerHandler():
             except ConnectionResetError:
                 print('Player {} (id: {}) disconnected'.format(self.name, self.id))
                 self.server.players.remove(self)
+                self.server.tell_everyone({
+                    'operation': 'player_disconnected',
+                    'id': self.id,
+                    'name': self.name
+                })
                 self.sock.close()
                 return False
 
