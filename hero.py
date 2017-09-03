@@ -72,6 +72,18 @@ class Hero(pygame.sprite.Sprite):
         if self.game.ball.grabbed and self.game.ball.grabbed_by == self:
             self.connection_handler.throw(self, power)
 
+    def update_pos(self):
+        self.connection_handler.send({
+            'operation': 'move',
+            'id': self.id,
+            'x': self.position.x,
+            'y': self.position.y,
+            'z': self.position.z,
+            'vel_x': self.movement.x,
+            'vel_y': self.movement.y,
+            'vel_z': self.movement.z,
+        })
+
     def beat(self):
         if self.game.ball.grabbed_by.position.dist(self.position) < settings.HIT_RANGE:
             self.connection_handler.beat(self)

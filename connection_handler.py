@@ -72,8 +72,9 @@ class ConnectionHandler():
                 return False
 
     def handle_joined(self, data):
-        print('Joined!')
+        print('Joined as {} (id: {})!'.format(self.name, data['id']))
         self.id = data['id']
+        self.game.local_players.append(self.id)
 
         am_i_clone = self.game.get_hero(data['id'])
         if am_i_clone is not None:
@@ -101,32 +102,34 @@ class ConnectionHandler():
         self.game.input_handlers.append(input_handler)
 
     def handle_player_joined(self, data):
-        name = data['name']
-        id = data['id']
-        position = Vector(data['x'], data['y'], data['z'])
-        team = data['team']
+        if not self.game.is_local_player_id(data['id']):
+            name = data['name']
+            id = data['id']
+            position = Vector(data['x'], data['y'], data['z'])
+            team = data['team']
 
-        am_i_clone = self.game.get_hero(data['id'])
-        if am_i_clone is not None:
-            self.game.heroes.remove(am_i_clone)
+            #am_i_clone = self.game.get_hero(data['id'])
+            #if am_i_clone is not None:
+            #    self.game.heroes.remove(am_i_clone)
 
-        print('Player {} (id: {}) joined'.format(name, id))
+            print('Player {} (id: {}) joined'.format(name, id))
 
-        new_hero = Hero(id, team)
-        new_hero.name = name
-        new_hero.position = position
+            new_hero = Hero(id, team)
+            new_hero.name = name
+            new_hero.position = position
 
-        self.game.heroes.append(new_hero)
+            self.game.heroes.append(new_hero)
 
     def handle_player_moved(self, data):
-        hero = self.game.get_hero(data['id'])
-        if hero:
-            hero.position.x = data['x']
-            hero.position.y = data['y']
-            hero.position.z = data['z']
-            hero.movement.x = data['vel_x']
-            hero.movement.y = data['vel_y']
-            hero.movement.z = data['vel_z']
+        if self.game.is_local_player_id(data['id']) == False:
+            hero = self.game.get_hero(data['id'])
+            if hero:
+                hero.position.x = data['x']
+                hero.position.y = data['y']
+                hero.position.z = data['z']
+                hero.movement.x = data['vel_x']
+                hero.movement.y = data['vel_y']
+                hero.movement.z = data['vel_z']
 
     def handle_update_ball(self, data):
         ball = self.game.ball

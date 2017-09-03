@@ -1,3 +1,9 @@
+#
+# It's Super Cool
+#
+# Assets by Kenney (https://kenney.nl/)
+# Some sounds effects came from freeSFX (http://www.freesfx.co.uk)
+
 import pygame
 import socket
 import threading
@@ -15,9 +21,13 @@ from vector import Vector
 
 
 class Game():
-    def __init__(self, network, name, input_handler):
-        self.network = network
-        self.network.game = self
+    def is_local_player_id(self, id):
+        return id in self.local_players
+
+    def __init__(self, players_to_call):
+        self.running = False
+
+        self.local_players = []
 
         pygame.init()
 
@@ -58,14 +68,17 @@ class Game():
         self.load_map()
         self.load_sounds()
 
-        networking_thread = threading.Thread(target=network.handle)
-        networking_thread.daemon = True
-        networking_thread.start()
-        self.network.join(name, input_handler)
+        for player_to_call in players_to_call:
+            player_to_call['network'].game = self
+            networking_thread = threading.Thread(target=player_to_call['network'].handle)
+            networking_thread.daemon = True
+            networking_thread.start()
+            player_to_call['network'].join(player_to_call['name'], player_to_call['input_handler'])
 
         self.play_sound('cheer', loops=-1)
 
     def run(self):
+        self.running = True
         first_run_time = time.time()
         while True:
             self.input()
@@ -102,16 +115,9 @@ class Game():
                                      (hero.rect.centerx - 25, hero.rect.centery - 10 - 25, 50 * power, 10))
 
             for input_handler in self.input_handlers:
-                hero = input_handler.hero
-                self.network.send({
-                    'operation': 'move',
-                    'x': hero.position.x,
-                    'y': hero.position.y,
-                    'z': hero.position.z,
-                    'vel_x': hero.movement.x,
-                    'vel_y': hero.movement.y,
-                    'vel_z': hero.movement.z,
-                })
+                if input_handler.hero is not None:
+                    hero = input_handler.hero
+                    hero.update_pos()
 
             sprites_to_draw = self.main_sprites.copy()
             sprites_to_draw.append(self.ball)
@@ -287,5 +293,26 @@ if __name__ == '__main__':
 
     print('Connected to {}'.format(address))
 
-    game = Game(handler, nickname, KeyboardInputHandler(settings.KEYBOARD_MAPPING))
+    players_to_call = []
+    players_to_call.append({
+        'network': handler,
+        'name': nickname,
+        'input_handler': KeyboardInputHandler(settings.KEYBOARD_MAPPING)
+    })
+
+    # Run additional players
+    for i in range(2, 5):
+        try:
+            player_settings = getattr(settings, 'PLAYER_{}'.format(i))
+            if player_settings is not None:
+                handler_2 = connect(address)
+                players_to_call.append({
+                    'network': handler_2,
+                    'name': player_settings[0],
+                    'input_handler': KeyboardInputHandler(player_settings[1])
+                })
+        except AttributeError:
+            pass
+
+    game = Game(players_to_call)
     game.run()

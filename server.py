@@ -133,8 +133,9 @@ class PlayerHandler():
         try:
             self.sock.send(length + message)
         except ConnectionResetError:
-            print('Player {} (id: {}) has suddenly disconnected.')
-            self.server.players.remove(self)
+            print('Player {} (id: {}) has suddenly disconnected.'.format(self.name, self.id))
+            if self in self.server.players:
+                self.server.players.remove(self)
             self.server.tell_everyone({
                 'operation': 'player_disconnected',
                 'id': self.id,
@@ -158,13 +159,27 @@ class PlayerHandler():
                     raise ('Client disconnected')
             except ConnectionResetError:
                 print('Player {} (id: {}) disconnected'.format(self.name, self.id))
-                self.server.players.remove(self)
+                if self in self.server.players:
+                    self.server.players.remove(self)
                 self.server.tell_everyone({
                     'operation': 'player_disconnected',
                     'id': self.id,
                     'name': self.name
                 })
                 self.sock.close()
+
+                if self.server.ball.grabbed and self.server.ball.grabbed_by == self:
+                    self.server.ball.grabbed = False
+
+                    self.server.tell_everyone({
+                        'operation': 'ball_thrown',
+                        'id': self.server.ball.grabbed_by.id,
+                        'vel_x': 0,
+                        'vel_y': 0,
+                        'vel_z': 0
+                    })
+
+                    self.server.ball.grabbed_by = None
                 return False
 
     def handle_join(self, data):

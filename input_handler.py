@@ -31,41 +31,43 @@ class KeyboardInputHandler(InputHandler):
         else:
             print('Keyboard input handler not set correctly (missing exactly 5 keys)')
 
+        self.hero = None
         self.throws = False
 
     def handle(self, event):
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == KEYDOWN:
-            if event.key == self.UP:
-                self.hero.move_up()
-            elif event.key == self.DOWN:
-                self.hero.move_down()
-            elif event.key == self.RIGHT:
-                self.hero.move_right()
-            elif event.key == self.LEFT:
-                self.hero.move_left()
-            elif event.key == self.ACTION_1:
-                if self.game.ball.grabbed and self.game.ball.grabbed_by == self.hero:
-                    self.hero.hold = time.time()
-                    self.hero.throws = True
-                    self.hero.throwing()
-                elif self.game.ball.grabbed and self.game.ball.grabbed_by is not self.hero:
-                    self.hero.beat()
-                elif self.game.ball.grabbed == False:
-                    self.hero.grab()
-        elif event.type == KEYUP:
-            if event.key == self.UP:
-                self.hero.move_up(stop=True)
-            elif event.key == self.DOWN:
-                self.hero.move_down(stop=True)
-            elif event.key == self.RIGHT:
-                self.hero.move_right(stop=True)
-            elif event.key == self.LEFT:
-                self.hero.move_left(stop=True)
-            elif event.key == self.ACTION_1:
-                if self.hero.throws:
-                    self.hero.throws = False
-                    # Power is calculated a load for 2 seconds, must be in (0, 1)
-                    self.hero.throw(min(2, time.time() - self.hero.hold) / 2)
+        if self.hero is not None:
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == KEYDOWN:
+                if event.key == self.UP:
+                    self.hero.move_up()
+                elif event.key == self.DOWN:
+                    self.hero.move_down()
+                elif event.key == self.RIGHT:
+                    self.hero.move_right()
+                elif event.key == self.LEFT:
+                    self.hero.move_left()
+                elif event.key == self.ACTION_1:
+                    if self.game.ball.grabbed and self.game.ball.grabbed_by == self.hero:
+                        self.hero.hold = time.time()
+                        self.hero.throws = True
+                        self.hero.throwing()
+                    elif self.game.ball.grabbed and self.game.ball.grabbed_by is not self.hero:
+                        self.hero.beat()
+                    elif self.game.ball.grabbed == False:
+                        self.hero.grab()
+            elif event.type == KEYUP:
+                if event.key == self.UP:
+                    self.hero.move_up(stop=True)
+                elif event.key == self.DOWN:
+                    self.hero.move_down(stop=True)
+                elif event.key == self.RIGHT:
+                    self.hero.move_right(stop=True)
+                elif event.key == self.LEFT:
+                    self.hero.move_left(stop=True)
+                elif event.key == self.ACTION_1:
+                    if self.hero.throws:
+                        self.hero.throws = False
+                        # Power is calculated a load for 2 seconds, must be in (0, 1)
+                        self.hero.throw(min(2, time.time() - self.hero.hold) / 2)
